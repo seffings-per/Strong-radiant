@@ -6,6 +6,17 @@ import { phases } from "../data";
 
 const WATER_GOAL = 12;
 const PROTEIN_GOAL = 150;
+
+const PROTEIN_FOODS = [
+  { name: "Chicken or Salmon", portion: "4 oz", grams: 30 },
+  { name: "Shrimp", portion: "4 oz", grams: 20 },
+  { name: "Egg", portion: "1 egg", grams: 8 },
+  { name: "Tuna", portion: "½ can", grams: 12 },
+  { name: "Parmesan", portion: "1 oz", grams: 10 },
+  { name: "Greek Yogurt / Cottage Cheese", portion: "½ cup", grams: 12 },
+  { name: "Edamame / Black Beans", portion: "½ cup", grams: 8 },
+  { name: "Chickpeas", portion: "½ cup", grams: 10 },
+];
 const weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 function getWeekStart(date = new Date()) {
@@ -78,10 +89,17 @@ export default function WorkoutLog() {
 
   // ── Protein save (on slider release) ──
   const saveProtein = async (grams) => {
-    const newLog = { ...proteinLog, [today]: grams };
+    const clamped = Math.min(PROTEIN_GOAL, Math.max(0, grams));
+    const newLog = { ...proteinLog, [today]: clamped };
     setProteinLog(newLog);
     setProteinDraft(null);
     await setDoc(doc(db, "users", user.uid), { proteinLog: newLog }, { merge: true });
+  };
+
+  // ── Protein add/subtract ──
+  const addProtein = async (delta) => {
+    const current = proteinLog[today] || 0;
+    await saveProtein(current + delta);
   };
 
   const streak = (() => {
@@ -159,7 +177,8 @@ export default function WorkoutLog() {
 
       {/* ── Protein ── */}
       <div style={{ background: "#16161f", border: "1px solid #2a2a3a", borderRadius: "10px", padding: "14px 16px", marginBottom: "16px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
           <div style={{ fontSize: "13px", color: "#e8d5a3" }}>🥩 Protein</div>
           <div style={{ display: "flex", alignItems: "baseline", gap: "3px" }}>
             <span style={{ fontSize: "22px", color: proteinColor, fontWeight: 600, lineHeight: 1 }}>{todayProtein}</span>
@@ -168,36 +187,56 @@ export default function WorkoutLog() {
           </div>
         </div>
 
-        {/* Progress bar behind slider */}
-        <div style={{ position: "relative", marginBottom: "6px" }}>
-          <div style={{ height: "6px", background: "#2a2a3a", borderRadius: "3px", overflow: "hidden", marginBottom: "8px" }}>
-            <div style={{
-              height: "100%", borderRadius: "3px",
-              width: `${proteinPct * 100}%`,
-              background: `linear-gradient(90deg, #9b8ec4, ${proteinColor})`,
-              transition: "width 0.1s",
-            }} />
-          </div>
+        {/* Progress bar */}
+        <div style={{ height: "6px", background: "#2a2a3a", borderRadius: "3px", overflow: "hidden", marginBottom: "10px" }}>
+          <div style={{
+            height: "100%", borderRadius: "3px",
+            width: `${proteinPct * 100}%`,
+            background: `linear-gradient(90deg, #9b8ec4, ${proteinColor})`,
+            transition: "width 0.1s",
+          }} />
+        </div>
+
+        {/* Slider row with ± buttons */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+          <button onClick={() => addProtein(-1)} style={{
+            width: "32px", height: "32px", borderRadius: "8px", flexShrink: 0,
+            background: "#0f0f14", border: "1px solid #3a3a4a",
+            color: "#8a8799", fontSize: "18px", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>−</button>
           <input
-            type="range"
-            min="0"
-            max={PROTEIN_GOAL}
-            step="1"
+            type="range" min="0" max={PROTEIN_GOAL} step="1"
             value={todayProtein}
             onChange={e => setProteinDraft(parseInt(e.target.value))}
             onMouseUp={e => saveProtein(parseInt(e.target.value))}
-            onTouchEnd={e => saveProtein(parseInt(e.target.changedTouches[0] ? parseInt(e.target.value) : todayProtein))}
-            style={{
-              width: "100%", cursor: "pointer",
-              accentColor: proteinColor,
-              height: "20px",
-            }}
+            onTouchEnd={e => saveProtein(parseInt(e.target.value))}
+            style={{ flex: 1, cursor: "pointer", accentColor: proteinColor, height: "20px" }}
           />
+          <button onClick={() => addProtein(1)} style={{
+            width: "32px", height: "32px", borderRadius: "8px", flexShrink: 0,
+            background: "#0f0f14", border: "1px solid #3a3a4a",
+            color: "#c8a96e", fontSize: "18px", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>+</button>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#4a4a5a" }}>
-          <span>0g</span>
-          <span style={{ color: "#8a8799" }}>Goal: {PROTEIN_GOAL}g</span>
-          <span>{PROTEIN_GOAL}g</span>
+
+        {/* Quick-add food buttons */}
+        <div style={{ fontSize: "9px", letterSpacing: "1.5px", textTransform: "uppercase", color: "#4a4a5a", marginBottom: "8px" }}>Quick add</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+          {PROTEIN_FOODS.map(food => (
+            <button key={food.name} onClick={() => addProtein(food.grams)} style={{
+              background: "#0f0f14", border: "1px solid #2a2a3a", borderRadius: "8px",
+              padding: "8px 10px", textAlign: "left", cursor: "pointer",
+              display: "flex", flexDirection: "column", gap: "2px",
+            }}>
+              <span style={{ fontSize: "10px", color: "#8a8799", lineHeight: 1.3 }}>{food.name}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "10px", color: "#4a4a5a" }}>{food.portion}</span>
+                <span style={{ fontSize: "12px", color: proteinColor, fontWeight: 600 }}>+{food.grams}g</span>
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 
