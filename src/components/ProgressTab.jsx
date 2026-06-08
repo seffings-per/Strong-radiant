@@ -9,7 +9,7 @@ function displayDate(str) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-const GOAL_WATER = 10;
+const GOAL_WATER = 12;
 
 export default function ProgressTab() {
   const { user } = useAuth();

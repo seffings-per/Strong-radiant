@@ -4,6 +4,8 @@ import { db } from "../firebase";
 import { useAuth } from "../AuthContext";
 import { phases } from "../data";
 
+const WATER_GOAL = 12;
+const PROTEIN_GOAL = 150;
 const weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 function getWeekStart(date = new Date()) {
@@ -13,34 +15,33 @@ function getWeekStart(date = new Date()) {
   return d;
 }
 
-function formatDate(d) {
-  return d.toISOString().split("T")[0];
-}
+function formatDate(d) { return d.toISOString().split("T")[0]; }
 
 export default function WorkoutLog() {
   const { user } = useAuth();
-  const [log, setLog] = useState({});
+  const [workoutLog, setWorkoutLog] = useState({});
+  const [waterLog, setWaterLog] = useState({});
+  const [proteinLog, setProteinLog] = useState({});
   const [selectedPhase, setSelectedPhase] = useState(1);
   const [syncing, setSyncing] = useState(true);
 
-  // Real-time Firestore listener
+  // Slider local state (save to Firestore on release)
+  const [proteinDraft, setProteinDraft] = useState(null);
+
   useEffect(() => {
     if (!user) return;
     const ref = doc(db, "users", user.uid);
     const unsub = onSnapshot(ref, (snap) => {
       if (snap.exists()) {
-        setLog(snap.data().workoutLog || {});
+        const data = snap.data();
+        setWorkoutLog(data.workoutLog || {});
+        setWaterLog(data.waterLog || {});
+        setProteinLog(data.proteinLog || {});
       }
       setSyncing(false);
     });
     return unsub;
   }, [user]);
-
-  const saveLog = async (newLog) => {
-    if (!user) return;
-    setLog(newLog);
-    await setDoc(doc(db, "users", user.uid), { workoutLog: newLog }, { merge: true });
-  };
 
   const today = formatDate(new Date());
   const weekStart = getWeekStart();
@@ -51,17 +52,36 @@ export default function WorkoutLog() {
   });
 
   const phase = phases.find(p => p.id === selectedPhase);
-  const totalLogged = Object.keys(log).length;
-  const weekLogged = weekDates.filter(d => log[d]).length;
+  const totalLogged = Object.keys(workoutLog).length;
+  const weekLogged = weekDates.filter(d => workoutLog[d]).length;
 
+  const todayWater = waterLog[today] || 0;
+  const todayProtein = proteinDraft !== null ? proteinDraft : (proteinLog[today] || 0);
+
+  // ── Workout toggle ──
   const toggleDay = async (dateStr, workout) => {
-    const next = { ...log };
-    if (next[dateStr]) {
-      delete next[dateStr];
-    } else {
-      next[dateStr] = { ...workout, completedAt: new Date().toISOString() };
-    }
-    await saveLog(next);
+    const next = { ...workoutLog };
+    if (next[dateStr]) { delete next[dateStr]; }
+    else { next[dateStr] = { ...workout, completedAt: new Date().toISOString() }; }
+    setWorkoutLog(next);
+    await setDoc(doc(db, "users", user.uid), { workoutLog: next }, { merge: true });
+  };
+
+  // ── Water toggle ──
+  const toggleWater = async (idx) => {
+    const current = waterLog[today] || 0;
+    const newVal = idx < current ? idx : idx + 1;
+    const newLog = { ...waterLog, [today]: newVal };
+    setWaterLog(newLog);
+    await setDoc(doc(db, "users", user.uid), { waterLog: newLog }, { merge: true });
+  };
+
+  // ── Protein save (on slider release) ──
+  const saveProtein = async (grams) => {
+    const newLog = { ...proteinLog, [today]: grams };
+    setProteinLog(newLog);
+    setProteinDraft(null);
+    await setDoc(doc(db, "users", user.uid), { proteinLog: newLog }, { merge: true });
   };
 
   const streak = (() => {
@@ -69,11 +89,13 @@ export default function WorkoutLog() {
     const d = new Date();
     while (true) {
       const key = formatDate(d);
-      if (log[key]) { count++; d.setDate(d.getDate() - 1); }
-      else break;
+      if (workoutLog[key]) { count++; d.setDate(d.getDate() - 1); } else break;
     }
     return count;
   })();
+
+  const proteinPct = Math.min(1, todayProtein / PROTEIN_GOAL);
+  const proteinColor = proteinPct >= 1 ? "#5fbfb0" : proteinPct >= 0.6 ? "#c8a96e" : "#9b8ec4";
 
   if (syncing) {
     return (
@@ -85,7 +107,7 @@ export default function WorkoutLog() {
 
   return (
     <div>
-      {/* Stats row */}
+      {/* ── Stats row ── */}
       <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
         {[
           { val: streak, label: "Day Streak", color: "#c8a96e", icon: "🔥" },
@@ -100,13 +122,92 @@ export default function WorkoutLog() {
         ))}
       </div>
 
-      {/* This week mini-calendar */}
+      {/* ── TODAY label ── */}
+      <div style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "#8a8799", marginBottom: "10px" }}>Today's Trackers</div>
+
+      {/* ── Water ── */}
+      <div style={{ background: "#16161f", border: "1px solid #2a2a3a", borderRadius: "10px", padding: "14px 16px", marginBottom: "10px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+          <div style={{ fontSize: "13px", color: "#e8d5a3" }}>💧 Water</div>
+          <div style={{ fontSize: "12px", color: todayWater >= WATER_GOAL ? "#5fbfb0" : "#8a8799" }}>
+            {todayWater}/{WATER_GOAL} glasses
+            {todayWater >= WATER_GOAL && <span style={{ marginLeft: "6px" }}>✓</span>}
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: "6px", justifyContent: "space-between" }}>
+          {Array.from({ length: WATER_GOAL }, (_, i) => {
+            const filled = i < todayWater;
+            return (
+              <button
+                key={i}
+                onClick={() => toggleWater(i)}
+                style={{
+                  flex: 1, height: "38px", borderRadius: "7px",
+                  background: filled ? "rgba(95,191,176,0.2)" : "#0f0f14",
+                  border: `1.5px solid ${filled ? "#5fbfb0" : "#2a2a3a"}`,
+                  fontSize: "16px", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "all 0.12s",
+                }}
+              >
+                {filled ? "💧" : <span style={{ color: "#2a2a3a", fontSize: "12px" }}>○</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Protein ── */}
+      <div style={{ background: "#16161f", border: "1px solid #2a2a3a", borderRadius: "10px", padding: "14px 16px", marginBottom: "16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+          <div style={{ fontSize: "13px", color: "#e8d5a3" }}>🥩 Protein</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "3px" }}>
+            <span style={{ fontSize: "22px", color: proteinColor, fontWeight: 600, lineHeight: 1 }}>{todayProtein}</span>
+            <span style={{ fontSize: "11px", color: "#8a8799" }}>/ {PROTEIN_GOAL}g</span>
+            {todayProtein >= PROTEIN_GOAL && <span style={{ marginLeft: "4px", color: "#5fbfb0", fontSize: "12px" }}>✓</span>}
+          </div>
+        </div>
+
+        {/* Progress bar behind slider */}
+        <div style={{ position: "relative", marginBottom: "6px" }}>
+          <div style={{ height: "6px", background: "#2a2a3a", borderRadius: "3px", overflow: "hidden", marginBottom: "8px" }}>
+            <div style={{
+              height: "100%", borderRadius: "3px",
+              width: `${proteinPct * 100}%`,
+              background: `linear-gradient(90deg, #9b8ec4, ${proteinColor})`,
+              transition: "width 0.1s",
+            }} />
+          </div>
+          <input
+            type="range"
+            min="0"
+            max={PROTEIN_GOAL}
+            step="1"
+            value={todayProtein}
+            onChange={e => setProteinDraft(parseInt(e.target.value))}
+            onMouseUp={e => saveProtein(parseInt(e.target.value))}
+            onTouchEnd={e => saveProtein(parseInt(e.target.changedTouches[0] ? parseInt(e.target.value) : todayProtein))}
+            style={{
+              width: "100%", cursor: "pointer",
+              accentColor: proteinColor,
+              height: "20px",
+            }}
+          />
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#4a4a5a" }}>
+          <span>0g</span>
+          <span style={{ color: "#8a8799" }}>Goal: {PROTEIN_GOAL}g</span>
+          <span>{PROTEIN_GOAL}g</span>
+        </div>
+      </div>
+
+      {/* ── This week mini-calendar ── */}
       <div style={{ background: "#16161f", border: "1px solid #2a2a3a", borderRadius: "10px", padding: "14px", marginBottom: "16px" }}>
         <div style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "#8a8799", marginBottom: "10px" }}>This Week</div>
         <div style={{ display: "flex", gap: "4px" }}>
           {weekDates.map((date, i) => {
             const isToday = date === today;
-            const done = !!log[date];
+            const done = !!workoutLog[date];
             const isPast = date <= today;
             return (
               <div key={date} style={{ flex: 1, textAlign: "center" }}>
@@ -126,24 +227,25 @@ export default function WorkoutLog() {
         </div>
       </div>
 
-      {/* Phase selector */}
+      {/* ── Phase selector ── */}
       <div style={{ display: "flex", gap: "6px", marginBottom: "12px" }}>
         {phases.map(p => (
           <button key={p.id} onClick={() => setSelectedPhase(p.id)} style={{
             flex: 1, background: selectedPhase === p.id ? `${p.color}20` : "#16161f",
             border: `1px solid ${selectedPhase === p.id ? p.color : "#2a2a3a"}`,
-            borderRadius: "8px", padding: "8px 4px", color: selectedPhase === p.id ? p.color : "#8a8799",
+            borderRadius: "8px", padding: "8px 4px",
+            color: selectedPhase === p.id ? p.color : "#8a8799",
             fontSize: "11px", cursor: "pointer",
           }}>{p.label}</button>
         ))}
       </div>
 
-      {/* Log workouts */}
+      {/* ── Log workouts ── */}
       <div style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "#8a8799", marginBottom: "10px" }}>Log Today's Workout</div>
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         {phase.days.map((d, i) => {
           const dateForDay = weekDates[weekDays.indexOf(d.day)];
-          const done = !!log[dateForDay];
+          const done = !!workoutLog[dateForDay];
           const workout = { phase: phase.id, phaseLabel: phase.label, phaseColor: phase.color, day: d.day, focus: d.focus, icon: d.icon };
           return (
             <div key={i} style={{ background: "#16161f", border: `1px solid ${done ? phase.color + "60" : "#2a2a3a"}`, borderRadius: "10px", overflow: "hidden" }}>
@@ -157,24 +259,20 @@ export default function WorkoutLog() {
                   background: done ? phase.color : "none",
                   border: `1.5px solid ${done ? phase.color : "#3a3a4a"}`,
                   borderRadius: "6px", padding: "6px 12px",
-                  color: done ? "#0f0f14" : "#8a8799", fontSize: "12px", fontWeight: done ? 700 : 400,
+                  color: done ? "#0f0f14" : "#8a8799",
+                  fontSize: "12px", fontWeight: done ? 700 : 400,
                   transition: "all 0.15s", cursor: "pointer",
                 }}>
                   {done ? "Done ✓" : "Log"}
                 </button>
               </div>
-              {done && log[dateForDay]?.note && (
-                <div style={{ padding: "0 14px 10px", fontSize: "12px", color: "#8a8799", fontStyle: "italic" }}>
-                  "{log[dateForDay].note}"
-                </div>
-              )}
             </div>
           );
         })}
       </div>
 
       <div style={{ marginTop: "14px", padding: "14px 16px", background: "rgba(200,169,110,0.05)", border: "1px solid rgba(200,169,110,0.15)", borderRadius: "10px", fontSize: "12px", color: "#8a8799", lineHeight: "1.6", fontStyle: "italic" }}>
-        Tap "Log" to mark a workout complete. Your streak and weekly progress sync across all your devices.
+        Water and protein reset each day. Workout streak and weekly progress sync across all your devices.
       </div>
     </div>
   );

@@ -2,10 +2,8 @@ const tabs = [
   { id: "plan", icon: "🗓", label: "Plan" },
   { id: "nutrition", icon: "🔥", label: "Nutrition" },
   { id: "meals", icon: "🍽", label: "Meals" },
-  { id: "grocery", icon: "🛒", label: "Grocery" },
   { id: "log", icon: "✅", label: "Log" },
   { id: "progress", icon: "📈", label: "Progress" },
-  { id: "knees", icon: "💛", label: "Knees" },
 ];
 
 export default function NavBar({ activeTab, setActiveTab }) {

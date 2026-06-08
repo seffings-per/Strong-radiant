@@ -8,8 +8,6 @@ import NavBar from "./components/NavBar";
 import PlanTab from "./components/PlanTab";
 import NutritionTab from "./components/NutritionTab";
 import MealsTab from "./components/MealsTab";
-import GroceryTab from "./components/GroceryTab";
-import KneeTab from "./components/KneeTab";
 import WorkoutLog from "./components/WorkoutLog";
 import ProgressTab from "./components/ProgressTab";
 
@@ -34,10 +32,8 @@ function AppInner() {
       case "plan":      return <PlanTab />;
       case "nutrition": return <NutritionTab />;
       case "meals":     return <MealsTab />;
-      case "grocery":   return <GroceryTab />;
       case "log":       return <WorkoutLog />;
       case "progress":  return <ProgressTab />;
-      case "knees":     return <KneeTab />;
       default:          return <PlanTab />;
     }
   };
