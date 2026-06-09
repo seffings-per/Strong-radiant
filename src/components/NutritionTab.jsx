@@ -2,7 +2,7 @@ const tips = [
   { icon: "🥚", text: "Front-load protein — aim for 35–40g at breakfast to reduce cravings all day" },
   { icon: "💧", text: "Drink 80–100 oz of water daily — dehydration mimics hunger and worsens joint pain" },
   { icon: "🥗", text: "Fill half your plate with vegetables at lunch and dinner — volume without calories" },
-  { icon: "🫐", text: "Anti-inflammatory foods help arthritis: berries, fatty fish, olive oil, leafy greens, walnuts" },
+  { icon: "🫐", text: "Anti-inflammatory foods help arthritis: berries, fatty fish, olive oil, and leafy greens" },
   { icon: "⏰", text: "Eat within 30–60 min after strength sessions to support muscle recovery" },
   { icon: "🚫", text: "Minimize ultra-processed foods and alcohol — both drive inflammation and stall fat loss" },
 ];

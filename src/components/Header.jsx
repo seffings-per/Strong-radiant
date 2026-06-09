@@ -9,9 +9,8 @@ export default function Header({ user, onSignOut }) {
       flexShrink: 0,
     }}>
       <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 30% 50%, rgba(95,191,176,0.07) 0%, transparent 60%), radial-gradient(ellipse at 70% 30%, rgba(212,120,138,0.07) 0%, transparent 60%)", pointerEvents: "none" }} />
-      <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#c8a96e", textTransform: "uppercase", marginBottom: "4px" }}>Your Personal Plan</div>
-      <div style={{ fontSize: "22px", color: "#e8d5a3", letterSpacing: "1px" }}>Strong &amp; Radiant</div>
-      <div style={{ fontSize: "11px", color: "#8a8799", fontStyle: "italic", marginTop: "2px" }}>16-week · knee-safe · 15–30 min/day</div>
+      <div style={{ fontSize: "22px", color: "#e8d5a3", letterSpacing: "3px", textTransform: "uppercase" }}>Trine</div>
+      <div style={{ fontSize: "11px", color: "#8a8799", letterSpacing: "2px", marginTop: "4px" }}>move. water. nourish.</div>
 
       {/* User avatar + sign out */}
       {user && onSignOut && (

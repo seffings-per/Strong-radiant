@@ -56,9 +56,8 @@ export default function AuthScreen() {
 
       {/* Branding */}
       <div style={{ textAlign: "center", marginBottom: "36px", position: "relative" }}>
-        <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#c8a96e", textTransform: "uppercase", marginBottom: "6px" }}>Your Personal Plan</div>
-        <div style={{ fontSize: "28px", color: "#e8d5a3", letterSpacing: "1px" }}>Strong &amp; Radiant</div>
-        <div style={{ fontSize: "12px", color: "#8a8799", fontStyle: "italic", marginTop: "4px" }}>16-week · knee-safe · 15–30 min/day</div>
+        <div style={{ fontSize: "32px", color: "#e8d5a3", letterSpacing: "4px", textTransform: "uppercase" }}>Trine</div>
+        <div style={{ fontSize: "12px", color: "#8a8799", letterSpacing: "2px", marginTop: "6px" }}>move. water. nourish.</div>
       </div>
 
       {/* Card */}
