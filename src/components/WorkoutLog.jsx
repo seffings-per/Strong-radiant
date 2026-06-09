@@ -256,7 +256,11 @@ export default function WorkoutLog() {
             <div style={{ fontSize: "12px", color: isCurrentWeek ? "#c8a96e" : "#e8d5a3" }}>
               {isCurrentWeek ? "This Week" : weekLabel}
             </div>
-            {!isCurrentWeek && <div style={{ fontSize: "10px", color: "#4a4a5a", marginTop: "1px" }}>{weekLabel}</div>}
+            {!isCurrentWeek && (
+              <button onClick={() => setWeekOffset(0)} style={{ background: "none", border: "none", color: "#c8a96e", fontSize: "10px", cursor: "pointer", marginTop: "2px", textDecoration: "underline", padding: 0 }}>
+                Back to today
+              </button>
+            )}
           </div>
           <button onClick={() => setWeekOffset(w => Math.min(0, w + 1))} style={{ background: "none", border: "none", color: weekOffset < 0 ? "#8a8799" : "#2a2a3a", fontSize: "18px", cursor: weekOffset < 0 ? "pointer" : "default", padding: "0 4px" }}>›</button>
         </div>
@@ -303,13 +307,21 @@ export default function WorkoutLog() {
         {phase.days.map((d, i) => {
           const dateForDay = weekDates[weekDayNames.indexOf(d.day)];
           const done = !!workoutLog[dateForDay];
+          const isToday = dateForDay === today;
           const workout = { phase: phase.id, phaseLabel: phase.label, phaseColor: phase.color, day: d.day, focus: d.focus, icon: d.icon };
           return (
-            <div key={i} style={{ background: "#16161f", border: `1px solid ${done ? phase.color + "60" : "#2a2a3a"}`, borderRadius: "10px" }}>
+            <div key={i} style={{
+              background: isToday ? "rgba(200,169,110,0.06)" : "#16161f",
+              border: `1px solid ${done ? phase.color + "60" : isToday ? "#c8a96e50" : "#2a2a3a"}`,
+              borderRadius: "10px",
+            }}>
               <div style={{ padding: "12px 14px", display: "flex", gap: "10px", alignItems: "center" }}>
                 <span style={{ fontSize: "18px" }}>{d.icon}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "9px", color: "#8a8799", letterSpacing: "1px", textTransform: "uppercase" }}>{d.day}</div>
+                  <div style={{ fontSize: "9px", color: isToday ? "#c8a96e" : "#8a8799", letterSpacing: "1px", textTransform: "uppercase" }}>
+                    {d.day} {dateForDay && <span style={{ opacity: 0.7 }}>· {fmtShort(dateForDay)}</span>}
+                    {isToday && <span style={{ marginLeft: "5px", color: "#c8a96e" }}>← today</span>}
+                  </div>
                   <div style={{ fontSize: "13px", color: "#e8d5a3" }}>{d.focus}</div>
                 </div>
                 <button onClick={() => toggleDay(dateForDay || today, workout)} style={{
