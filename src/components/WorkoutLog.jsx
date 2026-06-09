@@ -17,26 +17,43 @@ const PROTEIN_FOODS = [
   { name: "Edamame / Black Beans", portion: "½ cup", grams: 8 },
   { name: "Chickpeas", portion: "½ cup", grams: 10 },
 ];
-const weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-function getWeekStart(date = new Date()) {
-  const d = new Date(date);
-  d.setDate(d.getDate() - d.getDay());
+const weekDayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function getWeekStart(offset = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() - d.getDay() + offset * 7);
   d.setHours(0, 0, 0, 0);
   return d;
 }
 
 function formatDate(d) { return d.toISOString().split("T")[0]; }
 
+function fmtShort(dateStr) {
+  const d = new Date(dateStr + "T12:00:00");
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function getProgramWeek(startDate) {
+  if (!startDate) return null;
+  const start = new Date(startDate + "T00:00:00");
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return 1;
+  return Math.min(16, Math.floor(diff / 7) + 1);
+}
+
 export default function WorkoutLog() {
   const { user } = useAuth();
   const [workoutLog, setWorkoutLog] = useState({});
   const [waterLog, setWaterLog] = useState({});
   const [proteinLog, setProteinLog] = useState({});
+  const [programStart, setProgramStart] = useState("");
   const [selectedPhase, setSelectedPhase] = useState(1);
+  const [weekOffset, setWeekOffset] = useState(0);
   const [syncing, setSyncing] = useState(true);
-
-  // Slider local state (save to Firestore on release)
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [startDraft, setStartDraft] = useState("");
   const [proteinDraft, setProteinDraft] = useState(null);
 
   useEffect(() => {
@@ -48,6 +65,7 @@ export default function WorkoutLog() {
         setWorkoutLog(data.workoutLog || {});
         setWaterLog(data.waterLog || {});
         setProteinLog(data.proteinLog || {});
+        setProgramStart(data.programStart || "");
       }
       setSyncing(false);
     });
@@ -55,12 +73,17 @@ export default function WorkoutLog() {
   }, [user]);
 
   const today = formatDate(new Date());
-  const weekStart = getWeekStart();
+
+  // Week being viewed
+  const viewedWeekStart = getWeekStart(weekOffset);
   const weekDates = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart);
+    const d = new Date(viewedWeekStart);
     d.setDate(d.getDate() + i);
     return formatDate(d);
   });
+
+  const weekLabel = `${fmtShort(weekDates[0])} – ${fmtShort(weekDates[6])}`;
+  const isCurrentWeek = weekOffset === 0;
 
   const phase = phases.find(p => p.id === selectedPhase);
   const totalLogged = Object.keys(workoutLog).length;
@@ -68,6 +91,19 @@ export default function WorkoutLog() {
 
   const todayWater = waterLog[today] || 0;
   const todayProtein = proteinDraft !== null ? proteinDraft : (proteinLog[today] || 0);
+
+  const currentProgramWeek = getProgramWeek(programStart);
+  const currentPhaseId = currentProgramWeek
+    ? currentProgramWeek <= 4 ? 1 : currentProgramWeek <= 10 ? 2 : 3
+    : null;
+
+  // ── Save program start ──
+  const saveProgramStart = async () => {
+    if (!startDraft || !user) return;
+    setProgramStart(startDraft);
+    setShowStartPicker(false);
+    await setDoc(doc(db, "users", user.uid), { programStart: startDraft }, { merge: true });
+  };
 
   // ── Workout toggle ──
   const toggleDay = async (dateStr, workout) => {
@@ -87,7 +123,7 @@ export default function WorkoutLog() {
     await setDoc(doc(db, "users", user.uid), { waterLog: newLog }, { merge: true });
   };
 
-  // ── Protein save (on slider release) ──
+  // ── Protein ──
   const saveProtein = async (grams) => {
     const clamped = Math.min(PROTEIN_GOAL, Math.max(0, grams));
     const newLog = { ...proteinLog, [today]: clamped };
@@ -96,10 +132,8 @@ export default function WorkoutLog() {
     await setDoc(doc(db, "users", user.uid), { proteinLog: newLog }, { merge: true });
   };
 
-  // ── Protein add/subtract ──
   const addProtein = async (delta) => {
-    const current = proteinLog[today] || 0;
-    await saveProtein(current + delta);
+    await saveProtein((proteinLog[today] || 0) + delta);
   };
 
   const streak = (() => {
@@ -125,6 +159,51 @@ export default function WorkoutLog() {
 
   return (
     <div>
+      {/* ── Program start / week indicator ── */}
+      {!programStart ? (
+        <div style={{ background: "#16161f", border: "1px solid rgba(200,169,110,0.3)", borderRadius: "10px", padding: "14px 16px", marginBottom: "16px" }}>
+          {!showStartPicker ? (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: "13px", color: "#e8d5a3" }}>When did you start?</div>
+                <div style={{ fontSize: "11px", color: "#8a8799", marginTop: "2px" }}>Set your start date to track your week</div>
+              </div>
+              <button onClick={() => { setShowStartPicker(true); setStartDraft(today); }} style={{
+                background: "rgba(200,169,110,0.15)", border: "1px solid #c8a96e",
+                borderRadius: "8px", padding: "8px 14px", color: "#e8d5a3", fontSize: "12px", cursor: "pointer",
+              }}>Set date</button>
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontSize: "11px", color: "#8a8799", marginBottom: "8px", letterSpacing: "1px", textTransform: "uppercase" }}>Program start date</div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input type="date" value={startDraft} onChange={e => setStartDraft(e.target.value)}
+                  style={{ flex: 1, background: "#0f0f14", border: "1px solid #3a3a4a", borderRadius: "8px", padding: "9px 12px", color: "#e8d5a3", fontSize: "14px", outline: "none", colorScheme: "dark" }}
+                />
+                <button onClick={saveProgramStart} style={{ background: "rgba(200,169,110,0.15)", border: "1px solid #c8a96e", borderRadius: "8px", padding: "9px 14px", color: "#e8d5a3", fontSize: "13px", cursor: "pointer" }}>Save</button>
+                <button onClick={() => setShowStartPicker(false)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: "8px", padding: "9px 12px", color: "#8a8799", fontSize: "13px", cursor: "pointer" }}>✕</button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ background: "#16161f", border: "1px solid #2a2a3a", borderRadius: "10px", padding: "12px 16px", marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "#8a8799", marginBottom: "3px" }}>Program progress</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "16px", color: "#c8a96e", fontWeight: 600 }}>Week {currentProgramWeek} of 16</span>
+              {currentPhaseId && (
+                <span style={{ fontSize: "10px", color: phases.find(p => p.id === currentPhaseId)?.color, background: `${phases.find(p => p.id === currentPhaseId)?.color}15`, border: `1px solid ${phases.find(p => p.id === currentPhaseId)?.color}40`, borderRadius: "4px", padding: "2px 7px" }}>
+                  Phase {currentPhaseId}
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: "10px", color: "#4a4a5a", marginTop: "2px" }}>Started {fmtShort(programStart)}</div>
+          </div>
+          <button onClick={() => { setShowStartPicker(true); setStartDraft(programStart); }} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: "6px", padding: "5px 10px", color: "#4a4a5a", fontSize: "11px", cursor: "pointer" }}>Edit</button>
+        </div>
+      )}
+
       {/* ── Stats row ── */}
       <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
         {[
@@ -140,34 +219,28 @@ export default function WorkoutLog() {
         ))}
       </div>
 
-      {/* ── TODAY label ── */}
+      {/* ── Today's trackers (always today) ── */}
       <div style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "#8a8799", marginBottom: "10px" }}>Today's Trackers</div>
 
-      {/* ── Water ── */}
+      {/* Water */}
       <div style={{ background: "#16161f", border: "1px solid #2a2a3a", borderRadius: "10px", padding: "14px 16px", marginBottom: "10px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
           <div style={{ fontSize: "13px", color: "#e8d5a3" }}>💧 Water</div>
           <div style={{ fontSize: "12px", color: todayWater >= WATER_GOAL ? "#5fbfb0" : "#8a8799" }}>
-            {todayWater}/{WATER_GOAL} glasses
-            {todayWater >= WATER_GOAL && <span style={{ marginLeft: "6px" }}>✓</span>}
+            {todayWater}/{WATER_GOAL} glasses {todayWater >= WATER_GOAL && "✓"}
           </div>
         </div>
         <div style={{ display: "flex", gap: "6px", justifyContent: "space-between" }}>
           {Array.from({ length: WATER_GOAL }, (_, i) => {
             const filled = i < todayWater;
             return (
-              <button
-                key={i}
-                onClick={() => toggleWater(i)}
-                style={{
-                  flex: 1, height: "38px", borderRadius: "7px",
-                  background: filled ? "rgba(95,191,176,0.2)" : "#0f0f14",
-                  border: `1.5px solid ${filled ? "#5fbfb0" : "#2a2a3a"}`,
-                  fontSize: "16px", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  transition: "all 0.12s",
-                }}
-              >
+              <button key={i} onClick={() => toggleWater(i)} style={{
+                flex: 1, height: "38px", borderRadius: "7px",
+                background: filled ? "rgba(95,191,176,0.2)" : "#0f0f14",
+                border: `1.5px solid ${filled ? "#5fbfb0" : "#2a2a3a"}`,
+                fontSize: "16px", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.12s",
+              }}>
                 {filled ? "💧" : <span style={{ color: "#2a2a3a", fontSize: "12px" }}>○</span>}
               </button>
             );
@@ -175,9 +248,18 @@ export default function WorkoutLog() {
         </div>
       </div>
 
-      {/* ── This week mini-calendar ── */}
+      {/* ── Week navigation + calendar ── */}
       <div style={{ background: "#16161f", border: "1px solid #2a2a3a", borderRadius: "10px", padding: "14px", marginBottom: "16px" }}>
-        <div style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "#8a8799", marginBottom: "10px" }}>This Week</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+          <button onClick={() => setWeekOffset(w => w - 1)} style={{ background: "none", border: "none", color: "#8a8799", fontSize: "18px", cursor: "pointer", padding: "0 4px" }}>‹</button>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "12px", color: isCurrentWeek ? "#c8a96e" : "#e8d5a3" }}>
+              {isCurrentWeek ? "This Week" : weekLabel}
+            </div>
+            {!isCurrentWeek && <div style={{ fontSize: "10px", color: "#4a4a5a", marginTop: "1px" }}>{weekLabel}</div>}
+          </div>
+          <button onClick={() => setWeekOffset(w => Math.min(0, w + 1))} style={{ background: "none", border: "none", color: weekOffset < 0 ? "#8a8799" : "#2a2a3a", fontSize: "18px", cursor: weekOffset < 0 ? "pointer" : "default", padding: "0 4px" }}>›</button>
+        </div>
         <div style={{ display: "flex", gap: "4px" }}>
           {weekDates.map((date, i) => {
             const isToday = date === today;
@@ -185,13 +267,12 @@ export default function WorkoutLog() {
             const isPast = date <= today;
             return (
               <div key={date} style={{ flex: 1, textAlign: "center" }}>
-                <div style={{ fontSize: "9px", color: "#8a8799", marginBottom: "4px" }}>{weekDays[i].slice(0, 1)}</div>
+                <div style={{ fontSize: "9px", color: "#8a8799", marginBottom: "4px" }}>{weekDayNames[i].slice(0, 1)}</div>
                 <div style={{
                   width: "100%", aspectRatio: "1", borderRadius: "6px",
                   background: done ? "#c8a96e20" : isToday ? "#2a2a3a" : "none",
                   border: isToday ? "1.5px solid #c8a96e" : done ? "1.5px solid #c8a96e60" : "1px solid #2a2a3a",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "13px",
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px",
                 }}>
                   {done ? "✓" : isPast ? "·" : ""}
                 </div>
@@ -214,15 +295,17 @@ export default function WorkoutLog() {
         ))}
       </div>
 
-      {/* ── Log workouts ── */}
-      <div style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "#8a8799", marginBottom: "10px" }}>Log Today's Workout</div>
+      {/* ── Log workouts for viewed week ── */}
+      <div style={{ fontSize: "9px", letterSpacing: "2px", textTransform: "uppercase", color: "#8a8799", marginBottom: "10px" }}>
+        {isCurrentWeek ? "Log Today's Workout" : `Log — ${weekLabel}`}
+      </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         {phase.days.map((d, i) => {
-          const dateForDay = weekDates[weekDays.indexOf(d.day)];
+          const dateForDay = weekDates[weekDayNames.indexOf(d.day)];
           const done = !!workoutLog[dateForDay];
           const workout = { phase: phase.id, phaseLabel: phase.label, phaseColor: phase.color, day: d.day, focus: d.focus, icon: d.icon };
           return (
-            <div key={i} style={{ background: "#16161f", border: `1px solid ${done ? phase.color + "60" : "#2a2a3a"}`, borderRadius: "10px", overflow: "hidden" }}>
+            <div key={i} style={{ background: "#16161f", border: `1px solid ${done ? phase.color + "60" : "#2a2a3a"}`, borderRadius: "10px" }}>
               <div style={{ padding: "12px 14px", display: "flex", gap: "10px", alignItems: "center" }}>
                 <span style={{ fontSize: "18px" }}>{d.icon}</span>
                 <div style={{ flex: 1 }}>
@@ -247,7 +330,6 @@ export default function WorkoutLog() {
 
       {/* ── Protein ── */}
       <div style={{ background: "#16161f", border: "1px solid #2a2a3a", borderRadius: "10px", padding: "14px 16px", marginTop: "16px" }}>
-        {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
           <div style={{ fontSize: "13px", color: "#e8d5a3" }}>🥩 Protein</div>
           <div style={{ display: "flex", alignItems: "baseline", gap: "3px" }}>
@@ -256,50 +338,23 @@ export default function WorkoutLog() {
             {todayProtein >= PROTEIN_GOAL && <span style={{ marginLeft: "4px", color: "#5fbfb0", fontSize: "12px" }}>✓</span>}
           </div>
         </div>
-
-        {/* Progress bar */}
         <div style={{ height: "6px", background: "#2a2a3a", borderRadius: "3px", overflow: "hidden", marginBottom: "10px" }}>
-          <div style={{
-            height: "100%", borderRadius: "3px",
-            width: `${proteinPct * 100}%`,
-            background: `linear-gradient(90deg, #9b8ec4, ${proteinColor})`,
-            transition: "width 0.1s",
-          }} />
+          <div style={{ height: "100%", borderRadius: "3px", width: `${proteinPct * 100}%`, background: `linear-gradient(90deg, #9b8ec4, ${proteinColor})`, transition: "width 0.1s" }} />
         </div>
-
-        {/* Slider row with ± buttons */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
-          <button onClick={() => addProtein(-1)} style={{
-            width: "32px", height: "32px", borderRadius: "8px", flexShrink: 0,
-            background: "#0f0f14", border: "1px solid #3a3a4a",
-            color: "#8a8799", fontSize: "18px", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>−</button>
-          <input
-            type="range" min="0" max={PROTEIN_GOAL} step="1"
-            value={todayProtein}
+          <button onClick={() => addProtein(-1)} style={{ width: "32px", height: "32px", borderRadius: "8px", flexShrink: 0, background: "#0f0f14", border: "1px solid #3a3a4a", color: "#8a8799", fontSize: "18px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+          <input type="range" min="0" max={PROTEIN_GOAL} step="1" value={todayProtein}
             onChange={e => setProteinDraft(parseInt(e.target.value))}
             onMouseUp={e => saveProtein(parseInt(e.target.value))}
             onTouchEnd={e => saveProtein(parseInt(e.target.value))}
             style={{ flex: 1, cursor: "pointer", accentColor: proteinColor, height: "20px" }}
           />
-          <button onClick={() => addProtein(1)} style={{
-            width: "32px", height: "32px", borderRadius: "8px", flexShrink: 0,
-            background: "#0f0f14", border: "1px solid #3a3a4a",
-            color: "#c8a96e", fontSize: "18px", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>+</button>
+          <button onClick={() => addProtein(1)} style={{ width: "32px", height: "32px", borderRadius: "8px", flexShrink: 0, background: "#0f0f14", border: "1px solid #3a3a4a", color: "#c8a96e", fontSize: "18px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
         </div>
-
-        {/* Quick-add food buttons */}
         <div style={{ fontSize: "9px", letterSpacing: "1.5px", textTransform: "uppercase", color: "#4a4a5a", marginBottom: "8px" }}>Quick add</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
           {PROTEIN_FOODS.map(food => (
-            <button key={food.name} onClick={() => addProtein(food.grams)} style={{
-              background: "#0f0f14", border: "1px solid #2a2a3a", borderRadius: "8px",
-              padding: "8px 10px", textAlign: "left", cursor: "pointer",
-              display: "flex", flexDirection: "column", gap: "2px",
-            }}>
+            <button key={food.name} onClick={() => addProtein(food.grams)} style={{ background: "#0f0f14", border: "1px solid #2a2a3a", borderRadius: "8px", padding: "8px 10px", textAlign: "left", cursor: "pointer", display: "flex", flexDirection: "column", gap: "2px" }}>
               <span style={{ fontSize: "10px", color: "#8a8799", lineHeight: 1.3 }}>{food.name}</span>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: "10px", color: "#4a4a5a" }}>{food.portion}</span>
@@ -311,7 +366,7 @@ export default function WorkoutLog() {
       </div>
 
       <div style={{ marginTop: "14px", padding: "14px 16px", background: "rgba(200,169,110,0.05)", border: "1px solid rgba(200,169,110,0.15)", borderRadius: "10px", fontSize: "12px", color: "#8a8799", lineHeight: "1.6", fontStyle: "italic" }}>
-        Water and protein reset each day. Workout streak and weekly progress sync across all your devices.
+        Water and protein track today. Use ‹ › to log workouts on past days.
       </div>
     </div>
   );

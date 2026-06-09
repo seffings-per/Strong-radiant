@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Strong & Radiant',
-        short_name: 'Strong & Radiant',
-        description: '16-Week Fitness & Nutrition Plan',
+        name: 'Trine',
+        short_name: 'Trine',
+        description: 'move. water. nourish.',
         theme_color: '#0f0f14',
         background_color: '#0f0f14',
         display: 'standalone',
