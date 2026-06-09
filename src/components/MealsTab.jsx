@@ -156,20 +156,36 @@ export default function MealsTab() {
                 <>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: "9px", letterSpacing: "1.5px", textTransform: "uppercase", color, marginBottom: "3px" }}>{rawMeal.type}</div>
-                      <div style={{ fontSize: "13px", color: "#e8d5a3", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <div style={{ fontSize: "9px", letterSpacing: "1.5px", textTransform: "uppercase", color, marginBottom: "3px" }}>
+                        {rawMeal.type}
+                        {!isOverridden && <span style={{ marginLeft: "6px", color: "#3a3a4a", fontStyle: "italic", letterSpacing: "0.5px", textTransform: "none", fontSize: "9px" }}>suggestion</span>}
+                      </div>
+                      <div style={{ fontSize: "13px", color: isOverridden ? "#e8d5a3" : "#6a6a7a", fontStyle: isOverridden ? "normal" : "italic", display: "flex", alignItems: "center", gap: "6px" }}>
                         {meal.name}
-                        {isOverridden && <span style={{ fontSize: "8px", color: color, letterSpacing: "1px", textTransform: "uppercase" }}>edited</span>}
+                        {isOverridden && <span style={{ fontSize: "8px", color: color, letterSpacing: "1px", textTransform: "uppercase", background: `${color}15`, borderRadius: "4px", padding: "1px 5px" }}>yours</span>}
                       </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontSize: "12px", color: "#d4788a" }}>{meal.cals} cal</div>
-                        <div style={{ fontSize: "11px", color: "#5fbfb0" }}>{meal.protein}g protein</div>
+                        <div style={{ fontSize: "12px", color: isOverridden ? "#d4788a" : "#4a4a5a" }}>{meal.cals} cal</div>
+                        <div style={{ fontSize: "11px", color: isOverridden ? "#5fbfb0" : "#4a4a5a" }}>{meal.protein}g protein</div>
                       </div>
-                      <button onClick={e => startEdit(rawMeal, e)} style={{ background: "none", border: "1px solid #2a2a3a", borderRadius: "6px", padding: "5px 8px", color: "#4a4a5a", fontSize: "12px", cursor: "pointer" }}>✎</button>
+                      <button onClick={e => startEdit(rawMeal, e)} style={{
+                        background: isOverridden ? "none" : "rgba(200,169,110,0.08)",
+                        border: `1px solid ${isOverridden ? "#2a2a3a" : "#c8a96e60"}`,
+                        borderRadius: "8px", padding: "6px 10px",
+                        color: isOverridden ? "#4a4a5a" : "#c8a96e",
+                        fontSize: "11px", cursor: "pointer",
+                        display: "flex", alignItems: "center", gap: "4px",
+                      }}>
+                        <span>✎</span>
+                        <span>{isOverridden ? "" : "edit"}</span>
+                      </button>
                     </div>
                   </div>
+                  {!isOverridden && !expanded && (
+                    <div style={{ fontSize: "10px", color: "#3a3a4a", marginTop: "6px", fontStyle: "italic" }}>tap ✎ to make it yours</div>
+                  )}
 
                   {expanded === i && (
                     <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #2a2a3a" }}>

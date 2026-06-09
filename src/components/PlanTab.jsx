@@ -88,10 +88,11 @@ export default function PlanTab() {
     if (!draft) return;
     saveProfile({
       ...draft,
-      weight: parseFloat(draft.weight) || 150,
-      heightFt: parseInt(draft.heightFt) || 5,
-      heightIn: parseInt(draft.heightIn) || 0,
-      age: parseInt(draft.age) || 35,
+      weight: parseFloat(draft.weight) || null,
+      heightFt: parseInt(draft.heightFt) ?? null,
+      heightIn: parseInt(draft.heightIn) ?? null,
+      age: parseInt(draft.age) || null,
+      confirmed: !!(draft.weight && draft.heightFt != null && draft.age),
     });
     setEditing(false);
   };
@@ -104,23 +105,39 @@ export default function PlanTab() {
       <div style={{ background: "#16161f", border: "1px solid #2a2a3a", borderRadius: "10px", padding: "14px 16px", marginBottom: "14px" }}>
         {!editing ? (
           <>
-            {/* Stats row: Timeline, Weight, Height */}
+            {/* Prompt banner when not yet confirmed */}
+            {!profile.confirmed && (
+              <button onClick={startEdit} style={{
+                width: "100%", background: "rgba(200,169,110,0.08)", border: "1px dashed #c8a96e80",
+                borderRadius: "8px", padding: "10px 14px", marginBottom: "12px", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+              }}>
+                <span style={{ fontSize: "12px", color: "#c8a96e" }}>👆 Tap to enter your stats</span>
+                <span style={{ fontSize: "11px", color: "#8a8799" }}>personalizes your nutrition</span>
+              </button>
+            )}
+
+            {/* Stats row */}
             <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
               {[
-                ["16 wks", "Timeline"],
-                [profile.weight ? `${profile.weight} lbs` : "—", "Weight"],
-                [profile.heightFt ? `${profile.heightFt}′${profile.heightIn ?? 0}″` : "—", "Height"],
-                [profile.age ? `${profile.age} yrs` : "—", "Age"],
-              ].map(([val, lbl]) => (
-                <div key={lbl} style={{ flex: 1, background: "#0f0f14", border: "1px solid #2a2a3a", borderRadius: "8px", padding: "10px 6px", textAlign: "center" }}>
-                  <div style={{ fontSize: "14px", color: "#e8d5a3", fontWeight: 600 }}>{val}</div>
-                  <div style={{ fontSize: "9px", color: "#8a8799", letterSpacing: "1px", textTransform: "uppercase", marginTop: "2px" }}>{lbl}</div>
-                </div>
+                { val: "16 wks", lbl: "Timeline", set: true },
+                { val: profile.weight ? `${profile.weight} lbs` : "add weight", lbl: "Weight", set: !!profile.weight },
+                { val: profile.heightFt != null ? `${profile.heightFt}′${profile.heightIn ?? 0}″` : "add height", lbl: "Height", set: profile.heightFt != null },
+                { val: profile.age ? `${profile.age} yrs` : "add age", lbl: "Age", set: !!profile.age },
+              ].map(({ val, lbl, set }) => (
+                <button key={lbl} onClick={startEdit} style={{
+                  flex: 1, background: set ? "#0f0f14" : "rgba(200,169,110,0.04)",
+                  border: set ? "1px solid #2a2a3a" : "1px dashed #c8a96e50",
+                  borderRadius: "8px", padding: "10px 4px", textAlign: "center", cursor: lbl === "Timeline" ? "default" : "pointer",
+                }}>
+                  <div style={{ fontSize: "13px", color: set ? "#e8d5a3" : "#5a5a6a", fontWeight: set ? 600 : 400, fontStyle: set ? "normal" : "italic" }}>{val}</div>
+                  <div style={{ fontSize: "9px", color: set ? "#8a8799" : "#4a4a5a", letterSpacing: "1px", textTransform: "uppercase", marginTop: "2px" }}>{lbl}</div>
+                </button>
               ))}
             </div>
 
             {/* Goal toggle */}
-            <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
+            <div style={{ display: "flex", gap: "6px", marginBottom: profile.confirmed ? "10px" : "0" }}>
               {GOALS.map(g => (
                 <button key={g.id} onClick={() => saveProfile({ ...profile, goal: g.id })} style={{
                   flex: 1, padding: "9px 6px", borderRadius: "8px", fontSize: "12px", cursor: "pointer",
@@ -132,9 +149,11 @@ export default function PlanTab() {
               ))}
             </div>
 
-            <button onClick={startEdit} style={{ background: "none", border: "none", color: "#4a4a5a", fontSize: "11px", letterSpacing: "0.5px", cursor: "pointer", padding: 0 }}>
-              ✎ Edit weight, height &amp; age
-            </button>
+            {profile.confirmed && (
+              <button onClick={startEdit} style={{ background: "none", border: "none", color: "#4a4a5a", fontSize: "11px", letterSpacing: "0.5px", cursor: "pointer", padding: "8px 0 0" }}>
+                ✎ Edit stats
+              </button>
+            )}
           </>
         ) : (
           /* Edit form */

@@ -4,18 +4,19 @@ import { db } from "./firebase";
 import { useAuth } from "./AuthContext";
 
 export const DEFAULT_PROFILE = {
-  weight: 150,
-  heightFt: 5,
-  heightIn: 5,
-  age: 35,
+  weight: null,
+  heightFt: null,
+  heightIn: null,
+  age: null,
   goal: "lose",
+  confirmed: false,
 };
 
 // Mifflin-St Jeor (female) + lightly active multiplier
 export function calcNutrition(profile) {
   const { weight, heightFt, heightIn, age, goal } = profile;
 
-  const totalInches = (heightFt || 5) * 12 + (heightIn || 5);
+  const totalInches = (heightFt || 5) * 12 + (heightIn != null ? heightIn : 5);
   const heightCm = totalInches * 2.54;
   const weightKg = (weight || 150) * 0.453592;
   const ageNum = age || 35;
