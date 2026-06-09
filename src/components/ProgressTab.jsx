@@ -3,7 +3,12 @@ import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../AuthContext";
 
-function formatDate(d = new Date()) { return d.toISOString().split("T")[0]; }
+function formatDate(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 function displayDate(str) {
   const d = new Date(str + "T12:00:00");
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
