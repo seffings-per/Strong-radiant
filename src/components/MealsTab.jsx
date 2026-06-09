@@ -6,13 +6,16 @@ import { mealPlan } from "../data";
 
 const mealColors = { Breakfast: "#c8a96e", Lunch: "#5fbfb0", Snack: "#9b8ec4", Dinner: "#d4788a" };
 
+// mealPlan.days: Mon=0…Sun=6; getDay(): Sun=0, Mon=1…Sat=6
+function getTodayIndex() { return (new Date().getDay() + 6) % 7; }
+
 export default function MealsTab() {
   const { user } = useAuth();
-  const [activeDay, setActiveDay] = useState(0);
+  const [activeDay, setActiveDay] = useState(getTodayIndex);
   const [expanded, setExpanded] = useState(null);
   const [overrides, setOverrides] = useState({});
   const [editingKey, setEditingKey] = useState(null);
-  const [draft, setDraft] = useState({ name: "", cals: "", protein: "" });
+  const [draft, setDraft] = useState({ name: "", cals: "", protein: "", items: [] });
 
   useEffect(() => {
     if (!user) return;
@@ -28,7 +31,13 @@ export default function MealsTab() {
   const getMeal = (meal) => {
     const key = `${day.day}-${meal.type}`;
     const o = overrides[key];
-    return o ? { ...meal, name: o.name ?? meal.name, cals: o.cals ?? meal.cals, protein: o.protein ?? meal.protein } : meal;
+    return o ? {
+      ...meal,
+      name: o.name ?? meal.name,
+      cals: o.cals ?? meal.cals,
+      protein: o.protein ?? meal.protein,
+      items: o.items ?? meal.items,
+    } : meal;
   };
 
   const startEdit = (meal, e) => {
@@ -36,7 +45,7 @@ export default function MealsTab() {
     const key = `${day.day}-${meal.type}`;
     const m = getMeal(meal);
     setEditingKey(key);
-    setDraft({ name: m.name, cals: String(m.cals), protein: String(m.protein) });
+    setDraft({ name: m.name, cals: String(m.cals), protein: String(m.protein), items: [...m.items] });
     setExpanded(null);
   };
 
@@ -49,6 +58,7 @@ export default function MealsTab() {
         name: draft.name,
         cals: parseInt(draft.cals) || 0,
         protein: parseInt(draft.protein) || 0,
+        items: draft.items.filter(s => s.trim()),
       },
     };
     setOverrides(newOverrides);
@@ -68,6 +78,10 @@ export default function MealsTab() {
 
   const cancelEdit = (e) => { e.stopPropagation(); setEditingKey(null); };
 
+  const updateItem = (idx, val) => setDraft(d => { const items = [...d.items]; items[idx] = val; return { ...d, items }; });
+  const removeItem = (idx) => setDraft(d => ({ ...d, items: d.items.filter((_, i) => i !== idx) }));
+  const addItem = () => setDraft(d => ({ ...d, items: [...d.items, ""] }));
+
   const totalCals = day.meals.reduce((s, m) => s + getMeal(m).cals, 0);
   const totalProtein = day.meals.reduce((s, m) => s + getMeal(m).protein, 0);
 
@@ -75,16 +89,21 @@ export default function MealsTab() {
     <div>
       {/* Day picker */}
       <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "4px", marginBottom: "14px", scrollbarWidth: "none" }}>
-        {mealPlan.days.map((d, i) => (
-          <button key={i} onClick={() => { setActiveDay(i); setExpanded(null); setEditingKey(null); }} style={{
-            flexShrink: 0,
-            background: activeDay === i ? "rgba(200,169,110,0.15)" : "#16161f",
-            border: `1px solid ${activeDay === i ? "#c8a96e" : "#2a2a3a"}`,
-            borderRadius: "8px", padding: "8px 14px",
-            color: activeDay === i ? "#e8d5a3" : "#8a8799",
-            fontSize: "12px", letterSpacing: "0.5px", cursor: "pointer",
-          }}>{d.day.slice(0, 3)}</button>
-        ))}
+        {mealPlan.days.map((d, i) => {
+          const isToday = i === getTodayIndex();
+          return (
+            <button key={i} onClick={() => { setActiveDay(i); setExpanded(null); setEditingKey(null); }} style={{
+              flexShrink: 0,
+              background: activeDay === i ? "rgba(200,169,110,0.15)" : "#16161f",
+              border: `1px solid ${activeDay === i ? "#c8a96e" : isToday ? "#c8a96e40" : "#2a2a3a"}`,
+              borderRadius: "8px", padding: "8px 14px",
+              color: activeDay === i ? "#e8d5a3" : isToday ? "#c8a96e80" : "#8a8799",
+              fontSize: "12px", letterSpacing: "0.5px", cursor: "pointer",
+            }}>
+              {d.day.slice(0, 3)}{isToday && activeDay !== i ? " ·" : ""}
+            </button>
+          );
+        })}
       </div>
 
       {/* Daily totals */}
@@ -121,30 +140,54 @@ export default function MealsTab() {
                 /* ── Edit mode ── */
                 <div onClick={e => e.stopPropagation()}>
                   <div style={{ fontSize: "9px", letterSpacing: "1.5px", textTransform: "uppercase", color, marginBottom: "10px" }}>{rawMeal.type}</div>
+
+                  {/* Meal name */}
                   <input
                     value={draft.name}
                     onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
                     placeholder="Meal name"
                     style={{ width: "100%", background: "#0f0f14", border: "1px solid #3a3a4a", borderRadius: "8px", padding: "8px 12px", color: "#e8d5a3", fontSize: "14px", outline: "none", boxSizing: "border-box", marginBottom: "8px" }}
                   />
-                  <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+
+                  {/* Cals + Protein */}
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: "9px", color: "#8a8799", marginBottom: "4px", letterSpacing: "1px", textTransform: "uppercase" }}>Calories</div>
-                      <input
-                        type="number" value={draft.cals}
-                        onChange={e => setDraft(d => ({ ...d, cals: e.target.value }))}
-                        style={{ width: "100%", background: "#0f0f14", border: "1px solid #3a3a4a", borderRadius: "8px", padding: "8px 12px", color: "#d4788a", fontSize: "16px", outline: "none", boxSizing: "border-box" }}
-                      />
+                      <input type="number" value={draft.cals} onChange={e => setDraft(d => ({ ...d, cals: e.target.value }))}
+                        style={{ width: "100%", background: "#0f0f14", border: "1px solid #3a3a4a", borderRadius: "8px", padding: "8px 12px", color: "#d4788a", fontSize: "16px", outline: "none", boxSizing: "border-box" }} />
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: "9px", color: "#8a8799", marginBottom: "4px", letterSpacing: "1px", textTransform: "uppercase" }}>Protein (g)</div>
-                      <input
-                        type="number" value={draft.protein}
-                        onChange={e => setDraft(d => ({ ...d, protein: e.target.value }))}
-                        style={{ width: "100%", background: "#0f0f14", border: "1px solid #3a3a4a", borderRadius: "8px", padding: "8px 12px", color: "#5fbfb0", fontSize: "16px", outline: "none", boxSizing: "border-box" }}
-                      />
+                      <input type="number" value={draft.protein} onChange={e => setDraft(d => ({ ...d, protein: e.target.value }))}
+                        style={{ width: "100%", background: "#0f0f14", border: "1px solid #3a3a4a", borderRadius: "8px", padding: "8px 12px", color: "#5fbfb0", fontSize: "16px", outline: "none", boxSizing: "border-box" }} />
                     </div>
                   </div>
+
+                  {/* Ingredients */}
+                  <div style={{ marginBottom: "14px" }}>
+                    <div style={{ fontSize: "9px", color: "#8a8799", marginBottom: "8px", letterSpacing: "1px", textTransform: "uppercase" }}>Ingredients</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      {draft.items.map((item, j) => (
+                        <div key={j} style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                          <span style={{ color, fontSize: "10px", flexShrink: 0 }}>◆</span>
+                          <input
+                            value={item}
+                            onChange={e => updateItem(j, e.target.value)}
+                            placeholder={`Ingredient ${j + 1}`}
+                            style={{ flex: 1, background: "#0f0f14", border: "1px solid #3a3a4a", borderRadius: "7px", padding: "7px 10px", color: "#8a8799", fontSize: "13px", outline: "none" }}
+                          />
+                          <button onClick={() => removeItem(j)} style={{ background: "none", border: "none", color: "#3a3a4a", fontSize: "16px", cursor: "pointer", padding: "0 4px", flexShrink: 0 }}>×</button>
+                        </div>
+                      ))}
+                      <button onClick={addItem} style={{
+                        background: "none", border: "1px dashed #2a2a3a", borderRadius: "7px",
+                        padding: "7px 12px", color: "#4a4a5a", fontSize: "12px", cursor: "pointer",
+                        textAlign: "left",
+                      }}>+ Add ingredient</button>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
                   <div style={{ display: "flex", gap: "8px" }}>
                     <button onClick={saveEdit} style={{ flex: 1, background: "rgba(200,169,110,0.15)", border: "1px solid #c8a96e", borderRadius: "8px", padding: "9px", color: "#e8d5a3", fontSize: "13px", cursor: "pointer" }}>Save</button>
                     <button onClick={cancelEdit} style={{ flex: 1, background: "none", border: "1px solid #2a2a3a", borderRadius: "8px", padding: "9px", color: "#8a8799", fontSize: "13px", cursor: "pointer" }}>Cancel</button>
@@ -162,7 +205,7 @@ export default function MealsTab() {
                       </div>
                       <div style={{ fontSize: "13px", color: isOverridden ? "#e8d5a3" : "#6a6a7a", fontStyle: isOverridden ? "normal" : "italic", display: "flex", alignItems: "center", gap: "6px" }}>
                         {meal.name}
-                        {isOverridden && <span style={{ fontSize: "8px", color: color, letterSpacing: "1px", textTransform: "uppercase", background: `${color}15`, borderRadius: "4px", padding: "1px 5px" }}>yours</span>}
+                        {isOverridden && <span style={{ fontSize: "8px", color, letterSpacing: "1px", textTransform: "uppercase", background: `${color}15`, borderRadius: "4px", padding: "1px 5px" }}>yours</span>}
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
@@ -183,14 +226,15 @@ export default function MealsTab() {
                       </button>
                     </div>
                   </div>
-                  {!isOverridden && !expanded && (
+
+                  {!isOverridden && expanded !== i && (
                     <div style={{ fontSize: "10px", color: "#3a3a4a", marginTop: "6px", fontStyle: "italic" }}>tap ✎ to make it yours</div>
                   )}
 
                   {expanded === i && (
                     <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #2a2a3a" }}>
-                      {rawMeal.items.map((item, j) => (
-                        <div key={j} style={{ display: "flex", gap: "8px", alignItems: "center", padding: "5px 0", borderBottom: j < rawMeal.items.length - 1 ? "1px solid #1e1e28" : "none" }}>
+                      {meal.items.map((item, j) => (
+                        <div key={j} style={{ display: "flex", gap: "8px", alignItems: "center", padding: "5px 0", borderBottom: j < meal.items.length - 1 ? "1px solid #1e1e28" : "none" }}>
                           <span style={{ color, fontSize: "10px" }}>◆</span>
                           <span style={{ fontSize: "13px", color: "#8a8799" }}>{item}</span>
                         </div>
