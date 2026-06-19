@@ -144,6 +144,65 @@ export const mealPlan = {
   ]
 };
 
+export const workoutPlan = {
+  name: "15-Minute Strength Starter",
+  subtitle: "Arms & Legs alternating · Rest Sundays",
+  equipment: "Dumbbells starting at 3 lb · No gym required",
+  arms: {
+    label: "Arms & Upper Body",
+    icon: "💪",
+    detail: "15 min. Move through exercises back-to-back with 30 sec rest between sets. Mon · Wed · Fri.",
+    exercises: ["bicepCurl", "tricepExtension", "lateralRaise", "hammerCurl", "bentOverRow"],
+  },
+  legs: {
+    label: "Legs & Lower Body",
+    icon: "🦵",
+    detail: "15 min. Reverse lunges instead of forward lunges — gentler on knees, same benefit. Dead bugs anchor your core. Tue · Thu · Sat.",
+    exercises: ["bodyweightSquat", "reverseLunge", "gluteBridge", "calfRaise", "deadBug"],
+  },
+  schedule: [
+    { day: "Monday",    short: "Mon", icon: "💪", type: "arms" },
+    { day: "Tuesday",   short: "Tue", icon: "🦵", type: "legs" },
+    { day: "Wednesday", short: "Wed", icon: "💪", type: "arms" },
+    { day: "Thursday",  short: "Thu", icon: "🦵", type: "legs" },
+    { day: "Friday",    short: "Fri", icon: "💪", type: "arms" },
+    { day: "Saturday",  short: "Sat", icon: "🦵", type: "legs" },
+    { day: "Sunday",    short: "Sun", icon: "🌙", type: "rest" },
+  ],
+  cardio: {
+    note: "Optional, after strength or on its own. Never skip strength to do cardio — strength is the priority.",
+    signal: "When your current duration feels conversational — you can speak full sentences — add 2–3 minutes.",
+    rowing: [
+      { weeks: "1–2",  duration: "5 min easy pace" },
+      { weeks: "3–4",  duration: "7 min easy pace" },
+      { weeks: "5–6",  duration: "10 min steady pace" },
+      { weeks: "7–8",  duration: "12 min, add light resistance" },
+      { weeks: "9–10", duration: "15 min steady" },
+    ],
+    treadmill: [
+      { weeks: "1–2",  duration: "10 min easy walk" },
+      { weeks: "3–4",  duration: "12 min, try 1 min faster walk" },
+      { weeks: "5–6",  duration: "15 min walk" },
+      { weeks: "7–8",  duration: "15 min with 2 min jog intervals" },
+      { weeks: "9–10", duration: "20 min walk/jog mix" },
+    ],
+  },
+  progressionRules: [
+    { rule: "The 2-for-2 Rule", desc: "If you can do 2 extra reps on the last set for 2 sessions in a row, increase weight or reps next session." },
+    { rule: "Never Skip Form", desc: "If your form breaks down (swinging, arching back, straining neck), stay at the current level." },
+    { rule: "Sore ≠ Progress", desc: "Some soreness is normal early on. Severe soreness means you went too fast. Consistency beats intensity." },
+    { rule: "Fatigue is the Signal", desc: "The last 2 reps should feel genuinely hard but doable. If they feel easy, you're ready to increase." },
+    { rule: "Reps → Sets → Weight", desc: "Progress in this order: add reps first, add a set second, increase weight third. Safer and more sustainable." },
+  ],
+  bigPicture: [
+    { weeks: "1–2",  focus: "Build the habit. 15 minutes, no skipping." },
+    { weeks: "3–4",  focus: "Add reps. Your form is getting cleaner." },
+    { weeks: "5–6",  focus: "First weight increases. You are stronger." },
+    { weeks: "7–8",  focus: "Add a third set to key exercises." },
+    { weeks: "9–10", focus: "Heavier weights, real strength baseline established." },
+  ],
+};
+
 export const groceryList = {
   categories: [
     {

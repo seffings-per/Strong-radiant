@@ -18,7 +18,14 @@ export const exercises = {
       "Elbows stay glued to your ribs — no swinging",
       "Lower just as slowly as you lift — that's where the work happens",
       "Wrists stay neutral (don't bend them back)"
-    ]
+    ],
+    progression: [
+      { weeks: "1–2",  weight: "3 lb", reps: "10", sets: "2 sets", signal: "Move up when you finish all sets without muscle fatigue on the last 2 reps." },
+      { weeks: "3–4",  weight: "3 lb", reps: "12", sets: "2 sets" },
+      { weeks: "5–6",  weight: "4 lb", reps: "10", sets: "2 sets" },
+      { weeks: "7–8",  weight: "4 lb", reps: "12", sets: "3 sets" },
+      { weeks: "9–10", weight: "5 lb", reps: "10", sets: "3 sets" },
+    ],
   },
 
   shoulderPress: {
@@ -56,7 +63,40 @@ export const exercises = {
       "Keep your back flat — imagine balancing a book on it",
       "Pull to the hips, not to the chest — elbows stay close to body",
       "Don't jerk or use momentum — slow and controlled"
-    ]
+    ],
+    progression: [
+      { weeks: "1–2",  weight: "3 lb", reps: "10", sets: "2 sets", signal: "Back muscles are stronger — progress faster here. Increase when your back isn't feeling it at all." },
+      { weeks: "3–4",  weight: "3 lb", reps: "12", sets: "2 sets" },
+      { weeks: "5–6",  weight: "5 lb", reps: "10", sets: "2 sets" },
+      { weeks: "7–8",  weight: "5 lb", reps: "12", sets: "3 sets" },
+      { weeks: "9–10", weight: "8 lb", reps: "10", sets: "3 sets" },
+    ],
+  },
+
+  hammerCurl: {
+    name: "Hammer Curl",
+    icon: "🔨",
+    muscles: "Biceps, brachialis, forearms",
+    equipment: "Dumbbells",
+    muscleColor: "#c8a96e",
+    steps: [
+      "Stand tall, dumbbells at your sides, palms facing each other (neutral grip — thumbs up)",
+      "Keeping elbows tucked to your ribs, curl both weights up toward your shoulders",
+      "Squeeze at the top for 1 second",
+      "Lower slowly back to the start over 3 counts"
+    ],
+    cues: [
+      "Palms face each other the entire time — don't rotate",
+      "Elbows stay pinned to your sides — no swinging",
+      "Builds bicep peak and forearm strength — a great complement to regular curls"
+    ],
+    progression: [
+      { weeks: "1–2",  weight: "3 lb", reps: "10", sets: "2 sets", signal: "Increase when you can do all reps without rocking your torso for momentum." },
+      { weeks: "3–4",  weight: "3 lb", reps: "12", sets: "2 sets" },
+      { weeks: "5–6",  weight: "4 lb", reps: "10", sets: "2 sets" },
+      { weeks: "7–8",  weight: "4 lb", reps: "12", sets: "3 sets" },
+      { weeks: "9–10", weight: "5 lb", reps: "10", sets: "3 sets" },
+    ],
   },
 
   chestPress: {
@@ -113,7 +153,14 @@ export const exercises = {
       "Thumbs stay slightly lower than pinkies (like pouring a pitcher)",
       "Don't shrug your shoulders — they should stay down and relaxed",
       "Go lighter than you think — this is a small muscle"
-    ]
+    ],
+    progression: [
+      { weeks: "1–2",  weight: "3 lb", reps: "10", sets: "2 sets", signal: "Shoulders are stubborn — only increase when the weight feels genuinely light for all 12 reps." },
+      { weeks: "3–4",  weight: "3 lb", reps: "12", sets: "2 sets" },
+      { weeks: "5–6",  weight: "4 lb", reps: "10", sets: "2 sets" },
+      { weeks: "7–8",  weight: "4 lb", reps: "12", sets: "3 sets" },
+      { weeks: "9–10", weight: "5 lb", reps: "10", sets: "3 sets" },
+    ],
   },
 
   tricepExtension: {
@@ -132,7 +179,14 @@ export const exercises = {
       "Upper arms stay pointed at the ceiling — only the forearms move",
       "Keep elbows from flaring out to the sides",
       "Move slowly — this stretch position can feel intense"
-    ]
+    ],
+    progression: [
+      { weeks: "1–2",  weight: "3 lb", reps: "10", sets: "2 sets", signal: "Move up when you can complete 12 reps with no form breakdown." },
+      { weeks: "3–4",  weight: "3 lb", reps: "12", sets: "2 sets" },
+      { weeks: "5–6",  weight: "4 lb", reps: "10", sets: "2 sets" },
+      { weeks: "7–8",  weight: "4 lb", reps: "12", sets: "3 sets" },
+      { weeks: "9–10", weight: "5 lb", reps: "10", sets: "3 sets" },
+    ],
   },
 
   arnoldPress: {
@@ -269,7 +323,14 @@ export const exercises = {
       "Drive through heels, not your toes",
       "Squeeze glutes hard at the top — this is the whole point",
       "Don't over-arch your lower back; tuck the tailbone slightly"
-    ]
+    ],
+    progression: [
+      { weeks: "1–2",  weight: "Bodyweight", reps: "15", sets: "2 sets", signal: "Progress to single-leg when both-leg version feels like zero effort." },
+      { weeks: "3–4",  weight: "Bodyweight", reps: "20", sets: "2 sets" },
+      { weeks: "5–6",  weight: "Single-leg", reps: "10/leg", sets: "2 sets" },
+      { weeks: "7–8",  weight: "Weight on hips", reps: "15", sets: "3 sets" },
+      { weeks: "9–10", weight: "Weight on hips", reps: "20", sets: "3 sets" },
+    ],
   },
 
   wallSit: {
@@ -385,7 +446,14 @@ export const exercises = {
       "Back stays FLAT on the floor throughout — the moment it peels up, you've gone too far",
       "Move slowly — speed is the enemy here",
       "Breathe out as you extend, in as you return"
-    ]
+    ],
+    progression: [
+      { weeks: "1–2",  weight: "Bodyweight", reps: "8/side", sets: "2 sets", signal: "Core anchor for all your other exercises — protect your lower back first, progress second." },
+      { weeks: "3–4",  weight: "Bodyweight", reps: "10/side", sets: "2 sets" },
+      { weeks: "5–6",  weight: "Bodyweight", reps: "12/side", sets: "3 sets" },
+      { weeks: "7–8",  weight: "3 lb in arm", reps: "10/side", sets: "3 sets" },
+      { weeks: "9–10", weight: "3 lb in arm", reps: "12/side", sets: "3 sets" },
+    ],
   },
 
   heelSlides: {
@@ -597,6 +665,86 @@ export const exercises = {
       "A tiny wobble is normal and good — it means your stabilizers are working",
       "Touch the wall if needed — balance is a skill that builds over time"
     ]
+  },
+
+  // ─── NEW LOWER BODY ───────────────────────────────────────────────────
+
+  bodyweightSquat: {
+    name: "Bodyweight Squat",
+    icon: "🏋️",
+    muscles: "Quads, glutes, hamstrings",
+    equipment: "None (optional: dumbbell to hold at chest)",
+    muscleColor: "#9b8ec4",
+    steps: [
+      "Stand with feet shoulder-width apart, toes slightly turned out",
+      "Brace your core and sit back like you're lowering onto a chair behind you",
+      "Lower until thighs are parallel to the floor (or as low as is comfortable)",
+      "Press through your heels to stand, squeezing glutes at the top"
+    ],
+    cues: [
+      "Chest stays up — don't let your torso collapse forward",
+      "Knees track over your second toe — don't let them cave inward",
+      "Weight is in your heels — you should be able to wiggle your toes"
+    ],
+    progression: [
+      { weeks: "1–2",  weight: "Bodyweight", reps: "12", sets: "2 sets", signal: "Add weight or a set when 15 reps feels easy and your form is solid throughout." },
+      { weeks: "3–4",  weight: "Bodyweight", reps: "15", sets: "2 sets" },
+      { weeks: "5–6",  weight: "Bodyweight", reps: "15", sets: "3 sets" },
+      { weeks: "7–8",  weight: "3 lb hold", reps: "12", sets: "3 sets" },
+      { weeks: "9–10", weight: "5 lb hold", reps: "12", sets: "3 sets" },
+    ],
+  },
+
+  reverseLunge: {
+    name: "Reverse Lunge",
+    icon: "🦵",
+    muscles: "Quads, glutes, hamstrings — gentler on knees than forward lunge",
+    equipment: "None (optional: dumbbells at sides)",
+    muscleColor: "#9b8ec4",
+    steps: [
+      "Stand tall, feet hip-width apart, hands on hips or holding dumbbells",
+      "Step one foot BACK (not forward) and lower your back knee toward the floor",
+      "Front knee stays over your ankle — don't let it drift past your toes",
+      "Push through your front heel to return to standing, then switch legs"
+    ],
+    cues: [
+      "Step back — this is what makes it knee-friendly compared to a forward lunge",
+      "Keep your torso upright — don't lean forward",
+      "Only progress when you feel completely balanced throughout each rep"
+    ],
+    progression: [
+      { weeks: "1–2",  weight: "Bodyweight", reps: "8/leg", sets: "2 sets", signal: "Only progress when you feel completely balanced throughout each rep." },
+      { weeks: "3–4",  weight: "Bodyweight", reps: "10/leg", sets: "2 sets" },
+      { weeks: "5–6",  weight: "Bodyweight", reps: "12/leg", sets: "2 sets" },
+      { weeks: "7–8",  weight: "3 lb hold", reps: "10/leg", sets: "3 sets" },
+      { weeks: "9–10", weight: "5 lb hold", reps: "10/leg", sets: "3 sets" },
+    ],
+  },
+
+  calfRaise: {
+    name: "Standing Calf Raise",
+    icon: "👟",
+    muscles: "Calves (gastrocnemius, soleus), ankle stability",
+    equipment: "Wall for balance (optional)",
+    muscleColor: "#9b8ec4",
+    steps: [
+      "Stand with feet hip-width, fingertips lightly on a wall for balance",
+      "Rise up onto the balls of your feet as high as you can go",
+      "Hold at the top for 2 counts, feeling the calves fully contract",
+      "Lower slowly over 3 counts — don't let heels thud down"
+    ],
+    cues: [
+      "The slow lower is more beneficial than the rise — don't rush it",
+      "Rise evenly — don't roll to the outer or inner edge of your feet",
+      "Move to single-leg as soon as both-leg gets easy"
+    ],
+    progression: [
+      { weeks: "1–2",  weight: "Bodyweight", reps: "15", sets: "2 sets", signal: "Move to single-leg as soon as both-leg gets easy." },
+      { weeks: "3–4",  weight: "Bodyweight", reps: "20", sets: "2 sets" },
+      { weeks: "5–6",  weight: "Single-leg", reps: "12/leg", sets: "2 sets" },
+      { weeks: "7–8",  weight: "Single-leg", reps: "15/leg", sets: "3 sets" },
+      { weeks: "9–10", weight: "Single-leg off step", reps: "12/leg", sets: "3 sets" },
+    ],
   },
 
   // ─── CIRCUIT / FULL BODY ───────────────────────────────────────────────
